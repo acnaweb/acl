@@ -46,3 +46,90 @@ Exemplo prático:
    - Indicado quando a integração é baseada em eventos e não em APIs síncronas.  
 
 ![](docs/sequence.png)
+
+# Projeto Exemplo - Camada Anti-Corrupção de API (ACL) em Java
+
+Este repositório demonstra como implementar uma **Camada Anti-Corrupção (Anti-Corruption Layer - ACL)** em Java com Spring Boot e Resilience4j.
+
+## 📌 Objetivo
+
+Proteger o domínio interno de inconsistências vindas de um sistema legado, garantindo:
+- Tradução de contratos externos para o modelo de domínio interno.
+- Resiliência (retry, circuit breaker, timeouts, fallback).
+- Exposição de uma API limpa para consumidores internos.
+
+## 📂 Estrutura do Projeto
+
+```
+com.example
+ ├─ domain/                # Modelo de domínio limpo (interno)
+ ├─ acl/
+ │   ├─ api/               # Controllers REST expostos pela ACL
+ │   ├─ service/           # Serviços da ACL (resiliência, orquestração)
+ │   ├─ mapper/            # Traduções Legacy <-> Domínio
+ │   └─ legacy/            # Contratos e cliente do sistema legado
+ └─ config/                # Configurações transversais (cache, resilience, etc.)
+```
+
+## 🚀 Executando o Projeto
+
+### Pré-requisitos
+- **Java 17+**
+- **Maven 3.9+**
+
+### Passos
+1. Clone o repositório `.zip` e extraia em uma pasta.
+2. Compile e rode os testes:
+   ```bash
+   mvn clean install
+   ```
+3. Rode a aplicação:
+   ```bash
+   mvn spring-boot:run
+   ```
+4. Acesse o endpoint da ACL:
+   ```bash
+   curl http://localhost:8080/api/orders/123
+   ```
+
+## 🔧 Configuração
+
+As propriedades de configuração do sistema legado ficam no `application.yml`:
+```yaml
+legacy:
+  base-url: https://legacy.example.com
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      legacy:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+  retry:
+    instances:
+      legacy:
+        max-attempts: 3
+        wait-duration: 200ms
+  timelimiter:
+    instances:
+      legacy:
+        timeout-duration: 3s
+```
+
+## ✅ Testes
+
+Exemplo de teste de unidade para validação do **Mapper**:
+```bash
+mvn test
+```
+
+## 🔄 Alternativas
+
+- **Adapter/Facade no próprio serviço** (mais simples, mas acoplado).
+- **Transformação em API Gateway/ESB** (Apigee, Kong, MuleSoft).
+- **ACL por eventos (Kafka/Pub/Sub)** em vez de APIs síncronas.
+
+---
+📖 Este projeto é apenas um exemplo educacional para demonstrar como proteger o domínio interno de sistemas legados usando a Camada Anti-Corrupção.
