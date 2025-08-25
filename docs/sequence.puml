@@ -1,0 +1,34 @@
+@startuml sequence
+title Fluxo de chamada via ACL protegendo o domínio
+
+actor Client
+participant "API Gateway" as GW
+participant "ACL API" as ACL
+participant "Translator/Mapper" as MAP
+participant "Cache" as C
+participant "CircuitBreaker" as CB
+participant "Sistema Legado" as LEG
+participant "Serviço de Domínio" as DOM
+
+Client -> GW: GET /orders/123
+GW -> ACL: /orders/123 (contrato interno)
+ACL -> C: lookup chave(order:123)
+alt Hit de cache
+  C --> ACL: DTO Interno
+  ACL -> GW: 200 DTO Interno
+  GW -> Client: 200
+else Miss de cache
+  ACL -> MAP: preparar request legado
+  ACL -> CB: executar chamada remota
+  CB -> LEG: GET /v1/pedidos?id=123
+  LEG --> CB: 200 {status: 0, itens: [...]}
+  CB --> ACL: resposta legado
+  ACL -> MAP: traduzir {0|1|2} -> {PENDING|APPROVED|REJECTED}
+  MAP --> ACL: DTO Interno normalizado
+  ACL -> C: put(order:123, DTO)
+  ACL -> DOM: aplicar regras/integrações internas
+  DOM --> ACL: OK
+  ACL -> GW: 200 DTO Interno
+  GW -> Client: 200
+end
+@enduml

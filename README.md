@@ -44,3 +44,5 @@ Exemplo prático:
 4. **Event Streaming com Normalização (Kafka, Pub/Sub)**  
    - Receber eventos no formato legado, aplicar transformação/normalização e republicar em formato interno.  
    - Indicado quando a integração é baseada em eventos e não em APIs síncronas.  
+
+![](docs/sequence.png)
